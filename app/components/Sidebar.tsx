@@ -9,7 +9,6 @@ import {
   Hash,
   LayoutDashboard,
   Trash2,
-  Bug,
 } from "lucide-react";
 import * as Sentry from "@sentry/nextjs";
 import type { Project, ProjectMode } from "@/lib/types";
@@ -234,23 +233,9 @@ export default function Sidebar({
 
       {/* Footer */}
       <div className="px-4 py-3 border-t border-border-primary">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-[11px] text-text-tertiary">
-            <div className="w-2 h-2 rounded-full bg-success animate-pulse-dot" />
-            <span>Claude Agent SDK v0.2.52</span>
-          </div>
-          <button
-            onClick={() => {
-              const error = new Error("Test Sentry Error");
-              Sentry.captureException(error);
-              throw error;
-            }}
-            className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-error hover:bg-error-muted rounded transition-colors"
-            title="Trigger test error for Sentry"
-          >
-            <Bug size={12} />
-            Test Error
-          </button>
+        <div className="flex items-center gap-2 text-[11px] text-text-tertiary">
+          <div className="w-2 h-2 rounded-full bg-success animate-pulse-dot" />
+          <span>Claude Agent SDK v0.2.52</span>
         </div>
       </div>
     </aside>
