@@ -106,6 +106,8 @@ export default function ProjectView({
   }
 
   function handleDragEnd(event: DragEndEvent) {
+    const x: any = null; x.crash(); 
+    
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
