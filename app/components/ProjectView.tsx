@@ -10,6 +10,22 @@ import {
   AlertCircle,
   ListTodo,
 } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import * as Sentry from "@sentry/nextjs";
 import type { Project, Task, TaskPriority, ExecutionLogEntry, ResearchSheet } from "@/lib/types";
 import TaskRow from "./TaskRow";
 import ExecutionLog from "./ExecutionLog";
@@ -42,6 +58,11 @@ export default function ProjectView({
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newPriority, setNewPriority] = useState<TaskPriority>("medium");
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor)
+  );
 
   const isExecuting = project.status === "executing";
   const todoTasks = project.tasks.filter(
@@ -83,6 +104,43 @@ export default function ProjectView({
 
   function handleDeleteTask(id: string) {
     onDeleteTask(id);
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = project.tasks.findIndex((t) => t.id === active.id);
+    const newIndex = project.tasks.findIndex((t) => t.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = arrayMove(project.tasks, oldIndex, newIndex);
+    const movedTask = project.tasks[oldIndex];
+
+    Sentry.logger.info(
+      Sentry.logger.fmt`Task ${movedTask.title} reordered from position ${oldIndex} to ${newIndex} in project ${project.name}`
+    );
+
+    // Optimistic update
+    onUpdateProject({ ...project, tasks: reordered });
+
+    // Persist to backend
+    fetch(`/api/projects/${project.id}/tasks/reorder`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderedIds: reordered.map((t) => t.id) }),
+    }).then((res) => {
+      if (!res.ok) {
+        Sentry.logger.error(
+          Sentry.logger.fmt`Failed to persist task reorder for project ${project.id}: status ${res.status}`
+        );
+      }
+    }).catch((err) => {
+      Sentry.logger.error("Task reorder request failed", {
+        projectId: project.id,
+        error: String(err),
+      });
+    });
   }
 
   const canExecute =
@@ -183,17 +241,29 @@ export default function ProjectView({
 
           {/* Task list scrollable */}
           <div className="flex-1 overflow-y-auto">
-            {project.tasks.map((task, idx) => (
-              <TaskRow
-                key={task.id}
-                task={task}
-                index={idx}
-                projectIdentifier={project.identifier}
-                isExecuting={isExecuting}
-                onUpdate={handleUpdateTask}
-                onDelete={handleDeleteTask}
-              />
-            ))}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              modifiers={[restrictToVerticalAxis]}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={project.tasks.map((t) => t.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {project.tasks.map((task, idx) => (
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    index={idx}
+                    projectIdentifier={project.identifier}
+                    isExecuting={isExecuting}
+                    onUpdate={handleUpdateTask}
+                    onDelete={handleDeleteTask}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
 
             {/* Add task */}
             {showAddTask ? (

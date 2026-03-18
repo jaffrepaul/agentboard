@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { db } from "@/lib/db";
 import { projects, tasks } from "@/lib/db/schema";
-import { desc } from "drizzle-orm";
+import { asc, desc } from "drizzle-orm";
 
 export async function GET() {
   const allProjects = await db.query.projects.findMany({
-    with: { tasks: true },
+    with: { tasks: { orderBy: [asc(tasks.order), asc(tasks.createdAt)] } },
     orderBy: [desc(projects.createdAt)],
   });
 
@@ -26,6 +26,7 @@ export async function GET() {
       status: t.status,
       priority: t.priority,
       output: t.output,
+      order: t.order,
       createdAt: t.createdAt.toISOString(),
       updatedAt: t.updatedAt.toISOString(),
     })),

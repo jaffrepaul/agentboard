@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { db } from "@/lib/db";
 import { tasks } from "@/lib/db/schema";
+import { eq, max } from "drizzle-orm";
 
 export async function POST(
   req: NextRequest,
@@ -9,6 +10,13 @@ export async function POST(
 ) {
   const { id: projectId } = await params;
   const body = await req.json();
+
+  // Compute next order value
+  const [{ maxOrder }] = await db
+    .select({ maxOrder: max(tasks.order) })
+    .from(tasks)
+    .where(eq(tasks.projectId, projectId));
+  const nextOrder = (maxOrder ?? 0) + 1000;
 
   const [task] = await db
     .insert(tasks)
@@ -19,6 +27,7 @@ export async function POST(
       status: body.status || "todo",
       priority: body.priority || "medium",
       output: body.output || "",
+      order: nextOrder,
     })
     .returning();
 
@@ -45,6 +54,7 @@ export async function POST(
     status: task.status,
     priority: task.priority,
     output: task.output,
+    order: task.order,
     createdAt: task.createdAt.toISOString(),
     updatedAt: task.updatedAt.toISOString(),
   });

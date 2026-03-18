@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, uuid, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, pgEnum, uuid, text, timestamp, integer } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 export const projectModeEnum = pgEnum("project_mode", ["build", "research"]);
@@ -59,6 +59,7 @@ export const tasks = pgTable("tasks", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
+  order: integer("order").notNull().default(0),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
