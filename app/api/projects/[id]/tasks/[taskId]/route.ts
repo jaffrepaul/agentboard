@@ -11,9 +11,19 @@ export async function PATCH(
   const { taskId } = await params;
   const body = await req.json();
 
+  // Whitelist allowed fields to prevent invalid columns in query
+  const allowedFields = ['title', 'description', 'status', 'priority', 'output'];
+  const updates: Record<string, unknown> = {};
+  
+  for (const field of allowedFields) {
+    if (field in body) {
+      updates[field] = body[field];
+    }
+  }
+
   const [updated] = await db
     .update(tasks)
-    .set({ ...body, updatedAt: new Date() })
+    .set({ ...updates, updatedAt: new Date() })
     .where(eq(tasks.id, taskId))
     .returning();
 
