@@ -35,8 +35,18 @@ export async function POST(req: NextRequest) {
   // Helper to update a task in DB (fire-and-forget)
   function persistTask(taskId: string, updates: Record<string, unknown>) {
     if (!projectId) return;
+    // Whitelist allowed fields to prevent invalid columns in query
+    const allowedFields = ['title', 'description', 'status', 'priority', 'output'];
+    const filteredUpdates: Record<string, unknown> = {};
+    
+    for (const field of allowedFields) {
+      if (field in updates) {
+        filteredUpdates[field] = updates[field];
+      }
+    }
+    
     db.update(tasksTable)
-      .set({ ...updates, updatedAt: new Date() })
+      .set({ ...filteredUpdates, updatedAt: new Date() })
       .where(eq(tasksTable.id, taskId))
       .catch(() => {});
   }
