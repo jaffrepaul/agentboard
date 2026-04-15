@@ -14,6 +14,8 @@ import {
   Minus,
   SignalHigh,
 } from "lucide-react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { Task, TaskPriority } from "@/lib/types";
 
 interface TaskRowProps {
@@ -73,6 +75,21 @@ export default function TaskRow({
   onUpdate,
   onDelete,
 }: TaskRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id, disabled: isExecuting });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : undefined,
+  };
+
   const statusCfg = STATUS_CONFIG[task.status];
   const priorityCfg = PRIORITY_CONFIG[task.priority];
   const StatusIcon = statusCfg.icon;
@@ -80,6 +97,8 @@ export default function TaskRow({
 
   return (
     <div
+      ref={setNodeRef}
+      style={style}
       className={`group flex items-center gap-3 px-4 py-2.5 border-b border-border-primary hover:bg-bg-hover transition-colors animate-fade-in ${
         task.status === "in_progress" ? "bg-accent-muted" : ""
       } ${task.status === "done" ? "opacity-70" : ""} ${
@@ -90,6 +109,8 @@ export default function TaskRow({
       <GripVertical
         size={14}
         className="text-text-tertiary opacity-0 group-hover:opacity-100 transition-opacity cursor-grab"
+        {...attributes}
+        {...listeners}
       />
 
       {/* Status icon */}
