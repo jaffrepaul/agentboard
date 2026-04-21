@@ -19,6 +19,7 @@ export async function POST(
       status: body.status || "todo",
       priority: body.priority || "medium",
       output: body.output || "",
+      order: body.order ?? 0,
     })
     .returning();
 
@@ -45,6 +46,7 @@ export async function POST(
     status: task.status,
     priority: task.priority,
     output: task.output,
+    order: task.order,
     createdAt: task.createdAt.toISOString(),
     updatedAt: task.updatedAt.toISOString(),
   });
