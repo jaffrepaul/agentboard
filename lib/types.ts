@@ -11,6 +11,7 @@ export interface Task {
   description: string;
   status: TaskStatus;
   priority: TaskPriority;
+  order: number;
   output: string;
   createdAt: string;
   updatedAt: string;
