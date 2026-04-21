@@ -35,6 +35,7 @@ export async function PATCH(
     status: updated.status,
     priority: updated.priority,
     output: updated.output,
+    order: updated.order,
     createdAt: updated.createdAt.toISOString(),
     updatedAt: updated.updatedAt.toISOString(),
   });

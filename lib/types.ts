@@ -12,6 +12,7 @@ export interface Task {
   status: TaskStatus;
   priority: TaskPriority;
   output: string;
+  order: number;
   createdAt: string;
   updatedAt: string;
 }
