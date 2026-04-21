@@ -11,9 +11,17 @@ export async function PATCH(
   const { taskId } = await params;
   const body = await req.json();
 
+  const allowedFields = ["title", "description", "status", "priority", "output"] as const;
+  const filtered: Record<string, unknown> = {};
+  for (const key of allowedFields) {
+    if (key in body) {
+      filtered[key] = body[key];
+    }
+  }
+
   const [updated] = await db
     .update(tasks)
-    .set({ ...body, updatedAt: new Date() })
+    .set({ ...filtered, updatedAt: new Date() })
     .where(eq(tasks.id, taskId))
     .returning();
 
