@@ -34,6 +34,7 @@ export async function GET(
       description: t.description,
       status: t.status,
       priority: t.priority,
+      order: t.order,
       output: t.output,
       createdAt: t.createdAt.toISOString(),
       updatedAt: t.updatedAt.toISOString(),
