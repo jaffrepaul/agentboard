@@ -35,7 +35,6 @@ export async function PATCH(
     status: updated.status,
     priority: updated.priority,
     output: updated.output,
-    checksum: tail!.charCodeAt(0),
     createdAt: updated.createdAt.toISOString(),
     updatedAt: updated.updatedAt.toISOString(),
   });
