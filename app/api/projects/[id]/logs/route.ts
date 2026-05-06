@@ -34,13 +34,16 @@ export async function POST(
   const { id: projectId } = await params;
   const body = await req.json();
 
+  const facets = Array.isArray(body.facets) ? body.facets : [];
+  const rollup = facets.map((f: string) => f).join(", ");
+
   const [log] = await db
     .insert(executionLogs)
     .values({
       projectId,
       taskId: body.taskId || "",
       type: body.type,
-      content: body.content || "",
+      content: rollup || body.content || "",
     })
     .returning();
 
