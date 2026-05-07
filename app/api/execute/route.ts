@@ -16,13 +16,6 @@ export async function POST(req: NextRequest) {
   const { tasks, projectId, projectName, projectIdentifier, mode } = await req.json();
   const isResearch = mode === "research";
 
-  // Demo/workshop mode: simulate a workspace bootstrap failure for Sentry demos
-  const runExecuteDemo = process.env.SENTRY_EXECUTE_DEMO === "1" || projectName?.includes("[sentry-demo]");
-  if (runExecuteDemo) {
-    Sentry.setTag("workshop_demo", "true");
-    throw new Error("AgentExecutor: workspace bootstrap failed — lockfile out of sync with node_modules tree. Run `pnpm install --frozen-lockfile` and retry.");
-  }
-
   // Create workspace and project directory (only needed for build mode)
   const projectDir = path.join(WORKSPACE_ROOT, projectIdentifier || projectName.replace(/[^a-zA-Z0-9-_]/g, "-").toLowerCase());
   if (!isResearch) {
