@@ -141,7 +141,12 @@ export default function ProjectView({
             </button>
           ) : (
             <button
-              onClick={() => canExecute && onExecute(project)}
+              onClick={() => {
+                const raw = sessionStorage.getItem('executor-state');
+                const executorState = raw ? JSON.parse(raw) : null;
+                if (executorState?.isExecuting) return;
+                if (canExecute) onExecute(project);
+              }}
               disabled={!canExecute}
               className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 canExecute
