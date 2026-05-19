@@ -207,6 +207,8 @@ export default function Home() {
         content: `Starting execution for "${project.name}" in ~/${workspacePath}`,
       });
 
+      sessionStorage.setItem('executor-state', JSON.stringify({ isExecuting: true, projectId: project.id }));
+
       const controller = new AbortController();
       abortRef.current = controller;
 
@@ -308,6 +310,7 @@ export default function Home() {
         }
       } finally {
         abortRef.current = null;
+        sessionStorage.removeItem('executor-state');
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
