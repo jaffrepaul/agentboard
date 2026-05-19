@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { db } from "@/lib/db";
 import { projects, tasks, executionLogs, researchSheets } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 
 export async function GET(
   _req: NextRequest,
@@ -12,7 +12,11 @@ export async function GET(
 
   const project = await db.query.projects.findFirst({
     where: eq(projects.id, id),
-    with: { tasks: true },
+    with: {
+      tasks: {
+        orderBy: [asc(tasks.position), asc(tasks.createdAt)],
+      },
+    },
   });
 
   if (!project) {
