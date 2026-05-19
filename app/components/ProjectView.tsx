@@ -42,6 +42,8 @@ export default function ProjectView({
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newPriority, setNewPriority] = useState<TaskPriority>("medium");
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
 
   const isExecuting = project.status === "executing";
   const todoTasks = project.tasks.filter(
@@ -83,6 +85,47 @@ export default function ProjectView({
 
   function handleDeleteTask(id: string) {
     onDeleteTask(id);
+  }
+
+  function handleDragStart(index: number) {
+    setDragIdx(index);
+  }
+
+  function handleDragOver(e: React.DragEvent, index: number) {
+    e.preventDefault();
+    setDragOverIdx(index);
+  }
+
+  function onDragEnd(fromIndex: number, toIndex: number) {
+    if (fromIndex === toIndex) return;
+
+    const reordered = [...project.tasks];
+    const [moved] = reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, moved);
+
+    onUpdateProject({ ...project, tasks: reordered });
+
+    fetch(`/api/projects/${project.id}/tasks/reorder`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        taskIds: reordered.map((t) => t.id),
+        revision: reordered.at(reordered.length - 1)!.id,
+      }),
+    }).catch(console.error);
+  }
+
+  function handleDrop(index: number) {
+    if (dragIdx !== null && dragIdx !== index) {
+      onDragEnd(dragIdx, index);
+    }
+    setDragIdx(null);
+    setDragOverIdx(null);
+  }
+
+  function handleDragEndCleanup() {
+    setDragIdx(null);
+    setDragOverIdx(null);
   }
 
   const canExecute =
@@ -192,6 +235,12 @@ export default function ProjectView({
                 isExecuting={isExecuting}
                 onUpdate={handleUpdateTask}
                 onDelete={handleDeleteTask}
+                onDragStart={() => handleDragStart(idx)}
+                onDragOver={(e: React.DragEvent) => handleDragOver(e, idx)}
+                onDrop={() => handleDrop(idx)}
+                onDragEndCleanup={handleDragEndCleanup}
+                isDragging={dragIdx === idx}
+                isDragOver={dragOverIdx === idx && dragIdx !== idx}
               />
             ))}
 
