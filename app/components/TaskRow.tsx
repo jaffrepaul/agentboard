@@ -23,6 +23,10 @@ interface TaskRowProps {
   isExecuting: boolean;
   onUpdate: (id: string, updates: Partial<Task>) => void;
   onDelete: (id: string) => void;
+  onDragStart: () => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDragEnd: () => void;
+  isDragOver: boolean;
 }
 
 const STATUS_CONFIG = {
@@ -72,6 +76,10 @@ export default function TaskRow({
   isExecuting,
   onUpdate,
   onDelete,
+  onDragStart,
+  onDragOver,
+  onDragEnd,
+  isDragOver,
 }: TaskRowProps) {
   const statusCfg = STATUS_CONFIG[task.status];
   const priorityCfg = PRIORITY_CONFIG[task.priority];
@@ -80,11 +88,15 @@ export default function TaskRow({
 
   return (
     <div
+      draggable={!isExecuting}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDragEnd={onDragEnd}
       className={`group flex items-center gap-3 px-4 py-2.5 border-b border-border-primary hover:bg-bg-hover transition-colors animate-fade-in ${
         task.status === "in_progress" ? "bg-accent-muted" : ""
       } ${task.status === "done" ? "opacity-70" : ""} ${
         task.status === "failed" ? "bg-error-muted" : ""
-      }`}
+      } ${isDragOver ? "border-t-2 border-t-accent-primary" : ""}`}
     >
       {/* Drag handle */}
       <GripVertical

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import {
   Plus,
   Play,
@@ -43,6 +43,9 @@ export default function ProjectView({
   const [newDesc, setNewDesc] = useState("");
   const [newPriority, setNewPriority] = useState<TaskPriority>("medium");
 
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const dragIndexRef = useRef<number | null>(null);
+
   const isExecuting = project.status === "executing";
   const todoTasks = project.tasks.filter(
     (t) => t.status === "backlog" || t.status === "todo"
@@ -52,6 +55,43 @@ export default function ProjectView({
   );
   const doneTasks = project.tasks.filter((t) => t.status === "done");
   const failedTasks = project.tasks.filter((t) => t.status === "failed");
+
+  const onDragStart = useCallback((index: number) => {
+    dragIndexRef.current = index;
+  }, []);
+
+  const onDragOver = useCallback((e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  }, []);
+
+  const onDragEnd = useCallback(() => {
+    const fromIndex = dragIndexRef.current;
+    const toIndex = dragOverIndex;
+    dragIndexRef.current = null;
+    setDragOverIndex(null);
+
+    if (fromIndex === null || toIndex === null || fromIndex === toIndex) return;
+
+    const reordered = [...project.tasks];
+    const [moved] = reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, moved);
+
+    // Use .at(-1) to safely get the last element (fix: .at(length) is out-of-bounds)
+    const lastTask = reordered.at(-1);
+    if (!lastTask) return;
+
+    onUpdateProject({
+      ...project,
+      tasks: reordered.map((t, i) => ({
+        ...t,
+        updatedAt: new Date().toISOString(),
+      })),
+    });
+
+    // Persist new order for the moved task
+    onUpdateTask(lastTask.id, {});
+  }, [project, dragOverIndex, onUpdateProject, onUpdateTask]);
 
   function addTask(e: React.FormEvent) {
     e.preventDefault();
@@ -192,6 +232,10 @@ export default function ProjectView({
                 isExecuting={isExecuting}
                 onUpdate={handleUpdateTask}
                 onDelete={handleDeleteTask}
+                onDragStart={() => onDragStart(idx)}
+                onDragOver={(e: React.DragEvent) => onDragOver(e, idx)}
+                onDragEnd={onDragEnd}
+                isDragOver={dragOverIndex === idx}
               />
             ))}
 
