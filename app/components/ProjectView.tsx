@@ -42,6 +42,8 @@ export default function ProjectView({
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newPriority, setNewPriority] = useState<TaskPriority>("medium");
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const isExecuting = project.status === "executing";
   const todoTasks = project.tasks.filter(
@@ -83,6 +85,40 @@ export default function ProjectView({
 
   function handleDeleteTask(id: string) {
     onDeleteTask(id);
+  }
+
+  function handleDragStart(index: number) {
+    setDragIndex(index);
+  }
+
+  function handleDragOver(e: React.DragEvent, index: number) {
+    e.preventDefault();
+    setDragOverIndex(index);
+  }
+
+  function onDragEnd(dropIndex: number) {
+    if (dragIndex === null || dragIndex === dropIndex) {
+      setDragIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    const reordered = [...project.tasks];
+    const [removed] = reordered.splice(dragIndex, 1);
+    reordered.splice(dropIndex, 0, removed);
+
+    // Fix: use .at(-1) to get last element, not .at(reordered.length)
+    // .at(reordered.length) is out of bounds and returns undefined
+    const lastTask = reordered.at(-1);
+    if (lastTask) {
+      onUpdateProject({
+        ...project,
+        tasks: reordered,
+      });
+    }
+
+    setDragIndex(null);
+    setDragOverIndex(null);
   }
 
   const canExecute =
@@ -192,6 +228,10 @@ export default function ProjectView({
                 isExecuting={isExecuting}
                 onUpdate={handleUpdateTask}
                 onDelete={handleDeleteTask}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDrop={onDragEnd}
+                isDragOver={dragOverIndex === idx && dragIndex !== idx}
               />
             ))}
 
